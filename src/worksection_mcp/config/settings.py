@@ -44,6 +44,14 @@ class Settings(BaseSettings):
         default="projects_read,tasks_read,costs_read,tags_read,comments_read,files_read,users_read,contacts_read",
         description="Comma-separated OAuth2 scopes",
     )
+    worksection_enable_writes: bool = Field(
+        default=False,
+        description=(
+            "Master switch for mutating (write) tools. When False (default), all write "
+            "tools refuse to run regardless of token scopes. Requires an OAuth token "
+            "authorized with the relevant *_write scopes to actually take effect."
+        ),
+    )
 
     # OAuth2 Flow Settings
     oauth_callback_host: str = Field(
@@ -341,7 +349,8 @@ class Settings(BaseSettings):
         if not scopes:
             raise ValueError("At least one OAuth2 scope is required")
 
-        # Valid scopes
+        # Valid scopes (read + write). Write scopes only take effect when
+        # WORKSECTION_ENABLE_WRITES=true; this set merely rejects typos.
         valid_scopes = {
             "projects_read",
             "tasks_read",
@@ -351,6 +360,14 @@ class Settings(BaseSettings):
             "files_read",
             "users_read",
             "contacts_read",
+            "projects_write",
+            "tasks_write",
+            "costs_write",
+            "tags_write",
+            "comments_write",
+            "files_write",
+            "users_write",
+            "contacts_write",
             "administrative",
         }
 

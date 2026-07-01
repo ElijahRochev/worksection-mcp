@@ -519,6 +519,26 @@ async def test_new_tools_exist():
 
 
 @pytest.mark.asyncio
+async def test_write_tools_registered_only_with_settings():
+    """Write tools appear only when settings is passed; server is read-only by default."""
+    client = _make_client()
+
+    read_only = FakeMCP()
+    register_all_tools(read_only, client)
+    assert "create_task" not in read_only.tools
+    assert "add_comment" not in read_only.tools
+
+    with_writes = FakeMCP()
+    register_all_tools(
+        with_writes,
+        client,
+        settings=SimpleNamespace(worksection_enable_writes=False),
+    )
+    assert "create_task" in with_writes.tools
+    assert "complete_task" in with_writes.tools
+
+
+@pytest.mark.asyncio
 async def test_timer_tools_call_client():
     """Timer tools should call corresponding client methods."""
     client = _make_client(

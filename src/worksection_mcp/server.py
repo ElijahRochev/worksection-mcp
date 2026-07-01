@@ -176,8 +176,9 @@ Rate limited to 1 request/second per Worksection API limits.
         else mcp
     )
 
-    # Register all tools
-    register_all_tools(registrar, _client, _oauth, _file_cache)
+    # Register all tools (settings enables write tools, gated by
+    # settings.worksection_enable_writes)
+    register_all_tools(registrar, _client, _oauth, _file_cache, settings)
 
     # Register large-response helper tools on raw MCP to avoid recursive offloading
     register_offload_tools(mcp, large_response_store)

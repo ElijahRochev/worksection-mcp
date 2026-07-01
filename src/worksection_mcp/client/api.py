@@ -780,6 +780,199 @@ class WorksectionClient:
         return await self._make_request("get_my_timer", method="POST")
 
     # ==========================================================================
+    # Write API (mutations)
+    #
+    # These issue POST requests that MODIFY Worksection data. They require an
+    # OAuth token authorized with the relevant *_write scope AND are gated at
+    # the tool layer by Settings.worksection_enable_writes. Keep this section
+    # thin: validation and gating live in tools/writes.py.
+    # ==========================================================================
+
+    async def post_comment(
+        self,
+        task_id: str,
+        text: str,
+        hidden: str | None = None,
+        mention: str | None = None,
+    ) -> dict[str, Any]:
+        """Create a comment on a task (requires comments_write scope).
+
+        Args:
+            task_id: Task ID to comment on
+            text: Comment body
+            hidden: Comma-separated emails who may see an otherwise-hidden comment
+            mention: Comma-separated emails to mention at the end of the comment
+
+        Returns:
+            API response with the created comment
+        """
+        params: dict[str, Any] = {"id_task": task_id, "text": text}
+        if hidden:
+            params["hidden"] = hidden
+        if mention:
+            params["mention"] = mention
+        return await self._make_request("post_comment", params, method="POST")
+
+    async def post_task(
+        self,
+        project_id: str,
+        title: str,
+        parent_task_id: str | None = None,
+        assignee_email: str | None = None,
+        priority: int | None = None,
+        text: str | None = None,
+        date_start: str | None = None,
+        date_end: str | None = None,
+        subscribe: str | None = None,
+        max_time: str | None = None,
+        max_money: str | None = None,
+        tags: str | None = None,
+    ) -> dict[str, Any]:
+        """Create a (sub)task in a project (requires tasks_write scope).
+
+        Args:
+            project_id: Project ID to create the task in
+            title: Task name
+            parent_task_id: Parent task ID (creates a subtask when set)
+            assignee_email: Executive email, or 'ANY' / 'NOONE'
+            priority: Priority 0..10
+            text: Task description
+            date_start: Start date (YYYY-MM-DD or DD.MM.YYYY)
+            date_end: Due date (YYYY-MM-DD or DD.MM.YYYY)
+            subscribe: Comma-separated emails to subscribe to the task
+            max_time: Time estimate
+            max_money: Financial estimate
+            tags: Comma-separated existing tag names or IDs
+
+        Returns:
+            API response with the created task
+        """
+        params: dict[str, Any] = {"id_project": project_id, "title": title}
+        if parent_task_id:
+            params["id_parent"] = parent_task_id
+        if assignee_email:
+            params["email_user_to"] = assignee_email
+        if priority is not None:
+            params["priority"] = str(priority)
+        if text:
+            params["text"] = text
+        if date_start:
+            formatted = format_date_for_api(date_start)
+            if formatted is not None:
+                params["datestart"] = formatted
+        if date_end:
+            formatted = format_date_for_api(date_end)
+            if formatted is not None:
+                params["dateend"] = formatted
+        if subscribe:
+            params["subscribe"] = subscribe
+        if max_time:
+            params["max_time"] = max_time
+        if max_money:
+            params["max_money"] = max_money
+        if tags:
+            params["tags"] = tags
+        return await self._make_request("post_task", params, method="POST")
+
+    async def update_task(
+        self,
+        task_id: str,
+        title: str | None = None,
+        assignee_email: str | None = None,
+        priority: int | None = None,
+        date_start: str | None = None,
+        date_end: str | None = None,
+        date_closed: str | None = None,
+        max_time: str | None = None,
+        max_money: str | None = None,
+    ) -> dict[str, Any]:
+        """Update an existing (sub)task's parameters (requires tasks_write scope).
+
+        Args:
+            task_id: Task ID to update
+            title: New task name
+            assignee_email: New executive email, or 'ANY' / 'NOONE'
+            priority: Priority 0..10
+            date_start: Start date (YYYY-MM-DD or DD.MM.YYYY)
+            date_end: Due date (YYYY-MM-DD or DD.MM.YYYY)
+            date_closed: Closing date (YYYY-MM-DD or DD.MM.YYYY)
+            max_time: Time estimate
+            max_money: Financial estimate
+
+        Returns:
+            API response with the updated task
+        """
+        params: dict[str, Any] = {"id_task": task_id}
+        if title:
+            params["title"] = title
+        if assignee_email:
+            params["email_user_to"] = assignee_email
+        if priority is not None:
+            params["priority"] = str(priority)
+        if date_start:
+            formatted = format_date_for_api(date_start)
+            if formatted is not None:
+                params["datestart"] = formatted
+        if date_end:
+            formatted = format_date_for_api(date_end)
+            if formatted is not None:
+                params["dateend"] = formatted
+        if date_closed:
+            formatted = format_date_for_api(date_closed)
+            if formatted is not None:
+                params["dateclosed"] = formatted
+        if max_time:
+            params["max_time"] = max_time
+        if max_money:
+            params["max_money"] = max_money
+        return await self._make_request("update_task", params, method="POST")
+
+    async def complete_task(self, task_id: str) -> dict[str, Any]:
+        """Mark a (sub)task as complete (requires tasks_write scope).
+
+        Args:
+            task_id: Task ID to complete
+
+        Returns:
+            API response
+        """
+        return await self._make_request("complete_task", {"id_task": task_id}, method="POST")
+
+    async def reopen_task(self, task_id: str) -> dict[str, Any]:
+        """Reopen a completed (sub)task (requires tasks_write scope).
+
+        Args:
+            task_id: Task ID to reopen
+
+        Returns:
+            API response
+        """
+        return await self._make_request("reopen_task", {"id_task": task_id}, method="POST")
+
+    async def update_task_tags(
+        self,
+        task_id: str,
+        plus: str | None = None,
+        minus: str | None = None,
+    ) -> dict[str, Any]:
+        """Add and/or remove status/label tags on a task (requires tags_write scope).
+
+        Args:
+            task_id: Task ID
+            plus: Comma-separated tag names or IDs to add
+            minus: Comma-separated tag names or IDs to remove
+
+        Returns:
+            API response
+        """
+        params: dict[str, Any] = {"id_task": task_id}
+        if plus:
+            params["plus"] = plus
+        if minus:
+            params["minus"] = minus
+        return await self._make_request("update_task_tags", params, method="POST")
+
+    # ==========================================================================
     # System API
     # ==========================================================================
 

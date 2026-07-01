@@ -15,6 +15,16 @@ Provides **comprehensive read-only tools** for data access,
 enabling AI assistants like Claude to generate reports, analyze project data,
 and process image attachments.
 
+> 🔀 **Fork note.** This is a fork of
+> [pbv7/worksection-mcp](https://github.com/pbv7/worksection-mcp) that adds
+> **opt-in write operations** on top of the upstream read-only server:
+> `add_comment`, `create_task`, `update_task`, `complete_task`, `reopen_task`,
+> and `set_task_status`. Writes are **disabled by default** — they require
+> `WORKSECTION_ENABLE_WRITES=true` **and** an OAuth token authorized with the
+> relevant `*_write` scopes (`tasks_write`, `comments_write`, and `tags_write`
+> for status labels). With the flag off, behavior is identical to upstream.
+> See [Write Operations](#write-operations-opt-in).
+
 ## Features
 
 - **Multi-tenant** - Configurable for any Worksection account
@@ -288,6 +298,39 @@ replaced with a compact envelope. Use these tools to inspect and read the offloa
 | ------ | ------------- |
 | `get_offloaded_response_info` | Inspect metadata (size, SHA-256, MIME type) for an offloaded response |
 | `read_offloaded_response_text` | Read offloaded text/JSON content in bounded UTF-8-safe chunks (`offset` + `max_bytes`) |
+
+## Write Operations (opt-in)
+
+> **Fork addition.** Not part of upstream `pbv7/worksection-mcp`.
+
+These tools **modify live Worksection data**. They are **disabled by default**
+and only run when **both** conditions hold:
+
+1. `WORKSECTION_ENABLE_WRITES=true` is set in the environment, and
+2. the OAuth token carries the relevant `*_write` scope (enforced by Worksection).
+
+With the flag off, every write tool returns a `writes_disabled` refusal and the
+server behaves exactly like upstream. Each successful write emits a `WRITE …`
+audit line to the logs.
+
+| Tool | Description | Required scope |
+| ------ | ------------- | ---------------- |
+| `add_comment` | Post a comment on a task | `comments_write` |
+| `create_task` | Create a task or subtask in a project | `tasks_write` |
+| `update_task` | Edit an existing task (title, assignee, priority, dates, estimates) | `tasks_write` |
+| `complete_task` | Mark a task done | `tasks_write` |
+| `reopen_task` | Reopen a completed task | `tasks_write` |
+| `set_task_status` | Add/remove status or label tags on a task | `tags_write` |
+
+### Enabling writes
+
+1. Add the write scopes you need to your Worksection OAuth2 app (in Worksection
+   admin), e.g. `tasks_write`, `comments_write` (+ `tags_write` for
+   `set_task_status`).
+2. Add those scopes to `WORKSECTION_SCOPES` in `.env` and set
+   `WORKSECTION_ENABLE_WRITES=true`.
+3. Re-authenticate so the new token carries the write scopes (delete
+   `data/tokens/tokens.enc`, restart, and complete the OAuth flow).
 
 ## MCP Resources
 
