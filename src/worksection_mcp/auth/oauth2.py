@@ -30,9 +30,7 @@ _REFRESH_LOCK_TIMEOUT_SECONDS = 20.0
 def _describe_error(payload: dict[str, Any], fallback: str) -> tuple[str, str]:
     """Extract error code and description, tolerating Worksection's field names."""
     error = payload.get("error") or payload.get("errorCode") or "invalid_request"
-    description = (
-        payload.get("error_description") or payload.get("errorDescription") or fallback
-    )
+    description = payload.get("error_description") or payload.get("errorDescription") or fallback
     return str(error), str(description)
 
 
@@ -87,9 +85,7 @@ class OAuth2Manager:
             except OSError:
                 if asyncio.get_running_loop().time() >= deadline:
                     handle.close()
-                    raise OAuth2Error(
-                        "Timed out waiting for the token refresh lock"
-                    ) from None
+                    raise OAuth2Error("Timed out waiting for the token refresh lock") from None
                 try:
                     await asyncio.sleep(_REFRESH_LOCK_POLL_SECONDS)
                 except BaseException:

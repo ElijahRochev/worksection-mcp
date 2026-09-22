@@ -109,9 +109,7 @@ def register_write_tools(
         if not time or not time.strip():
             raise ValueError("time must be a non-empty string")
         logger.info("WRITE log_time id_task=%s time=%s date=%s", task_id, time, date)
-        return await client.add_costs(
-            task_id=task_id, time=time, comment=comment, date=date
-        )
+        return await client.add_costs(task_id=task_id, time=time, comment=comment, date=date)
 
     @mcp.tool()
     async def create_task(

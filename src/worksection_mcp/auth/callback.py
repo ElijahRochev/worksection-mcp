@@ -211,6 +211,7 @@ class CallbackServer:
 
         server_cls = HTTPServer
         if ":" in self.host:
+
             class _HTTPServerV6(HTTPServer):
                 address_family = socket.AF_INET6
 
